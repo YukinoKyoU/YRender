@@ -3,8 +3,10 @@
 #include "FrameBuffer.cpp"
 
 Rasterization::Rasterization(const int& w, const int& h) :
-	Width(w), Height(h), FrontBuffer(nullptr)
-{}
+	Width(w), Height(h), FrontBuffer(nullptr), renderMode(Line)
+{
+	ViewPlanes.resize(6, glm::vec4(0));
+}
 
 Rasterization:: ~Rasterization() {
 	if (FrontBuffer)
@@ -12,7 +14,16 @@ Rasterization:: ~Rasterization() {
 	FrontBuffer = nullptr;
 	shader = nullptr;
 }
-void Rasterization::Init() {
+
+void Rasterization::Resize(const int& w, const int& h)
+{
+	Width = w;
+	Height = h;
+	FrontBuffer->Resize(w, h);
+}
+
+void Rasterization::Init() 
+{
 	if (FrontBuffer)
 		delete FrontBuffer;
 	if (shader)
@@ -22,11 +33,17 @@ void Rasterization::Init() {
 	shader = new Shader();
 }
 
-void Rasterization::Resize(const int& w, const int& h) 
+void Rasterization::changeRenderMode()
 {
-	Width = w;
-	Height = h;
-	FrontBuffer->Resize(w, h);
+	if (renderMode == Fill)
+		renderMode = Line;
+	else
+		renderMode = Fill;
+}
+
+void Rasterization::UpdateViewPlanes()
+{
+	ViewingFrustumPlanes(ViewPlanes, shader->ProjectMatrix * shader->ViewMatrix);
 }
 
 void Rasterization::ClearBuffer(const glm::vec4& color) 
@@ -61,11 +78,24 @@ void Rasterization::DrawMesh(const Mesh& mesh) {
 		PerspectiveDivision(v2);
 		PerspectiveDivision(v3);
 
+		if (!FaceCulling(v1.windowPos, v2.windowPos, v3.windowPos)) {
+			continue;
+		}
+
 		//视口变换
 		v1.windowPos = ViewPortMatrix * v1.windowPos;
 		v2.windowPos = ViewPortMatrix * v2.windowPos;
 		v3.windowPos = ViewPortMatrix * v3.windowPos;
-		ScanLineTriangle(v1, v2, v3);
+
+		//切换画线or填充
+		if (renderMode == Line) {
+			DrawLine(v1, v2);
+			DrawLine(v2, v3);
+			DrawLine(v3, v1);
+		}
+		else {
+			ScanLineTriangle(v1, v2, v3);
+		}
 	}
 }
 
@@ -160,8 +190,70 @@ void Rasterization::ScanLine(const V2F& left, const V2F& right) {
 		float depth = FrontBuffer->GetDepth(v.windowPos.x, v.windowPos.y);
 		if (v.windowPos.z < depth) 
 		{
+			float z = v.Z;
+			v.worldPos /= z;
+			v.texcoord /= z;
+			v.normal /= z;
+			v.color /= z;
+
 			FrontBuffer->WritePoint(v.windowPos.x, v.windowPos.y, shader->FragmentShader(v));
 			FrontBuffer->WriteDepth(v.windowPos.x, v.windowPos.y, v.windowPos.z);
+		}
+	}
+}
+
+void Rasterization::DrawLine(const V2F& from, const V2F& to)
+{
+	int dx = to.windowPos.x - from.windowPos.x;
+	int dy = to.windowPos.y - from.windowPos.y;
+	int Xstep = 1, Ystep = 1;
+	if (dx < 0)
+	{
+		Xstep = -1;
+		dx = -dx;
+	}
+	if (dy < 0)
+	{
+		Ystep = -1;
+		dy = -dy;
+	}
+	int currentX = from.windowPos.x;
+	int currentY = from.windowPos.y;
+	V2F tmp;
+	//斜率小于1
+	if (dy <= dx)
+	{
+		int P = 2 * dy - dx;
+		for (int i = 0; i <= dx; ++i)
+		{
+			tmp = V2F::lerp(from, to, ((float)(i) / dx));
+			FrontBuffer->WritePoint(currentX, currentY, glm::vec4(255, 0, 0, 0));
+			currentX += Xstep;
+			if (P <= 0)
+				P += 2 * dy;
+			else
+			{
+				currentY += Ystep;
+				P += 2 * (dy - dx);
+			}
+		}
+	}
+	//斜率大于1，利用对称性画
+	else
+	{
+		int P = 2 * dx - dy;
+		for (int i = 0; i <= dy; ++i)
+		{
+			tmp = V2F::lerp(from, to, ((float)(i) / dy));
+			FrontBuffer->WritePoint(currentX, currentY, glm::vec4(255, 0, 0, 0));
+			currentY += Ystep;
+			if (P <= 0)
+				P += 2 * dx;
+			else
+			{
+				currentX += Xstep;
+				P -= 2 * (dy - dx);
+			}
 		}
 	}
 }
@@ -173,6 +265,54 @@ void Rasterization::PerspectiveDivision(V2F& v)
 
 	//透视除法之后Z除了深度测试已经没用了,将深度值归一化[0,1]
 	v.windowPos.z = (v.windowPos.z + 1.0) * 0.5;
+}
+
+bool Rasterization::FaceCulling(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3) {
+
+	//用按逆时针方向用其他两点的坐标减去这点，获得该点两边的向量
+	glm::vec3 tmp1 = glm::vec3(v2.x - v1.x, v2.y - v1.y, v2.z - v1.z);
+	glm::vec3 tmp2 = glm::vec3(v3.x - v1.x, v3.y - v1.y, v3.z - v1.z);
+
+	//两向量叉乘获得面法向量
+	glm::vec3 normal = glm::normalize(glm::cross(tmp1, tmp2));
+
+	//在NDC下，观察方向 是0,0,1
+	glm::vec3 view = glm::vec3(0, 0, 1);
+	//如果该面法向与观察方向（该点坐标减去摄像机位置）的夹角小于90度，证明是背向面
+	return glm::dot(normal, view) < 0;
+}
+
+bool Rasterization::ViewCull(const glm::vec4& v1, const glm::vec4& v2, const glm::vec4& v3) {
+	//包围盒的两个顶点
+	glm::vec3 minPoint, maxPoint;
+	//最左边为三个点中最小值
+	minPoint.x = min(v1.x, min(v2.x, v3.x));
+	minPoint.y = min(v1.y, min(v2.y, v3.y));
+	minPoint.z = min(v1.z, min(v2.z, v3.z));
+	//最右边为三个点中最大值的向上取整
+	maxPoint.x = max(v1.x, max(v2.x, v3.x));
+	maxPoint.y = max(v1.y, max(v2.y, v3.y));
+	maxPoint.z = max(v1.z, max(v2.z, v3.z));
+	// Near 和 Far 剔除时只保留完全在内的
+	if (!Point2Plane(minPoint, ViewPlanes[4]) || !Point2Plane(maxPoint, ViewPlanes[4])) {
+		return false;
+	}
+	if (!Point2Plane(minPoint, ViewPlanes[5]) || !Point2Plane(maxPoint, ViewPlanes[5])) {
+		return false;
+	}
+	if (!Point2Plane(minPoint, ViewPlanes[0]) && !Point2Plane(maxPoint, ViewPlanes[0])) {
+		return false;
+	}
+	if (!Point2Plane(minPoint, ViewPlanes[1]) && !Point2Plane(maxPoint, ViewPlanes[1])) {
+		return false;
+	}
+	if (!Point2Plane(minPoint, ViewPlanes[2]) && !Point2Plane(maxPoint, ViewPlanes[2])) {
+		return false;
+	}
+	if (!Point2Plane(minPoint, ViewPlanes[3]) && !Point2Plane(maxPoint, ViewPlanes[3])) {
+		return false;
+	}
+	return true;
 }
 
 

@@ -78,8 +78,9 @@ int main()
     {
    
         processInput(window);
+
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        ras->ClearBuffer(glm::vec4(0.0f, 0.1f, 0.2f, 0.0f));
+        ras->ClearBuffer(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
         ras->setModelMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0, 1.0, 0.0)));
 
@@ -143,10 +144,11 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
         camera->MoveUp(-0.1f);
     }
+    */
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
         ras->changeRenderMode();
     }
-    */
+    
 }
 
 // 每次窗口大小被调整的时候被调用

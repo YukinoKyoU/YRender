@@ -14,9 +14,11 @@ V2F Shader::VertexShader(const Vertex& a2v)
 	o.worldPos = ModelMatrix * a2v.position;				//计算世界空间下坐标World Space
 	o.windowPos = ProjectMatrix * ViewMatrix * o.worldPos;	//计算裁剪空间下坐标(Homogeneous Clip Space)
 
-	o.color = a2v.color;									//记录颜色信息
-	o.normal = a2v.normal;									//记录发现信息	
-	o.texcoord = a2v.texcoord;								//记录纹理信息
+	o.Z = 1 / o.windowPos.w;
+
+	o.color = a2v.color * o.Z;									//记录颜色信息
+	o.normal = a2v.normal * o.Z;								//记录发现信息	
+	o.texcoord = a2v.texcoord * o.Z;							//记录纹理信息
 
 	return o;
 }

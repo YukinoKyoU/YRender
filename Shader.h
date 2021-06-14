@@ -27,8 +27,6 @@ public:
 	void setProjectMatrix(const glm::mat4& project);
 
 	Texture* texture;
-
-private:
 	glm::mat4 ModelMatrix;		//Model Space To World Space
 	glm::mat4 ViewMatrix;		//World Space To View Space
 	glm::mat4 ProjectMatrix;	//View Space To CVV(Æë´Î¼ô²Ã¿Õ¼ä)

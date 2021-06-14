@@ -54,10 +54,22 @@ glm::mat4 GetPerspectiveMatrix(const float& fovy, const float& aspect, const flo
 */
 glm::mat4 GetViewPortMatrix(int ox, int oy, int width, int height);
 
+/**
+ * @brief 求出包围视锥体的六个面，平面以Ax+By+Cz+D=0的形式给出
+ * @param 平面数组，V*P矩阵
+ * @return 平面的数组（元素为平面方程的法向量指向内部的（面向原点））
+*/
+void ViewingFrustumPlanes(std::vector<glm::vec4>& result, const glm::mat4& vp);
+/**
+ * @brief 求出点是否在视锥体内
+ * @param 顶点坐标，平面法向量
+ * @return 是否在视锥体内
+*/
+bool Point2Plane(const glm::vec3& v, const glm::vec4& p);
+
 bool equal(const float& a, const float& b);
 
 float min(const float& a, const float& b);
 float max(const float& a, const float& b);
-
 
 #endif // !MATRIXFORMULA_H_
