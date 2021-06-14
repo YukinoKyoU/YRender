@@ -3,6 +3,7 @@
 #define SHADER_H_
 
 #include "Vertex.h"
+#include "Texture.h"
 
 //着色器类
 //包括顶点着色器，片元着色器
@@ -25,11 +26,13 @@ public:
 
 	void setProjectMatrix(const glm::mat4& project);
 
+	Texture* texture;
 
 private:
 	glm::mat4 ModelMatrix;		//Model Space To World Space
 	glm::mat4 ViewMatrix;		//World Space To View Space
 	glm::mat4 ProjectMatrix;	//View Space To CVV(齐次剪裁空间)
+	
 
 };
 

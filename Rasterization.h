@@ -4,6 +4,7 @@
 
 #include "Shader.h"
 #include "FrameBuffer.h"
+#include "Mesh.h"
 
 class Rasterization {
 
@@ -36,6 +37,10 @@ public:
 	}
 
 	void Init();
+	void SetTexture(Texture* tex)
+	{
+		shader->texture = tex;
+	}
 
 	//调整分辨率
 	void Resize(const int& w, const int& h);
@@ -45,7 +50,7 @@ public:
 	void Show();
 
 	//画三角形
-	void DrawTriangle(const Vertex& v1, const Vertex& v2, const Vertex& v3);
+	void DrawMesh(const Mesh& mesh);
 
 	//扫描线法
 	void ScanLineTriangle(const V2F& v1, const V2F& v2, const V2F& v3);
@@ -56,6 +61,12 @@ public:
 	void DownTriangle(const V2F& v1, const V2F& v2, const V2F& v3);
 	//扫描每条线并着色
 	void ScanLine(const V2F& left, const V2F& right);
+
+	/**
+	* @brief 透视除法，将齐次剪裁空间的坐标全部除以w
+	* @param 顶点V2F结构体
+	*/
+	void PerspectiveDivision(V2F& v);
 };
 
 

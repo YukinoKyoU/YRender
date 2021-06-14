@@ -23,7 +23,8 @@ V2F Shader::VertexShader(const Vertex& a2v)
 
 glm::vec4 Shader::FragmentShader(const V2F& v)
 {
-	return v.color;
+	glm::vec4 color = texture->Sample2D(v.texcoord);
+	return color;
 }
 
 void Shader::setModelMatrix(const glm::mat4& model)

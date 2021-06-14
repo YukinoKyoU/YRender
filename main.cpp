@@ -48,10 +48,15 @@ int main()
     ras = new Rasterization(SCR_WIDTH, SCR_HEIGHT);
     ras->Init();
     
-    //输入三角形三个顶点
-    Vertex V1(glm::vec3(-0.5, -0.5, 0), glm::vec4(255, 0, 0, 0));
-    Vertex V2(glm::vec3(0.5, -0.5, 0), glm::vec4(0, 255, 0, 0));
-    Vertex V3(glm::vec3(0, 0.5, 0), glm::vec4(0, 0, 255, 0));
+    Mesh box;
+    box = box.CreateBox(glm::vec3(0.0, 0.0, 0.0), 0.5);
+    Texture tex("container.jpg");
+    ras->SetTexture(&tex);
+
+    ras->setProjectMatrix(GetPerspectiveMatrix(glm::radians(60.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.3f, 100));
+    ras->setViewMatrix(GetViewMatrix(glm::vec3(0, 0, 5), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0)));
+
+    float angle = 0.0f;
 
     glfwMakeContextCurrent(window);
     //注册framebuffer_size_callback函数,告诉GLFW每当窗口调整大小的时候调用这个函数
@@ -65,29 +70,24 @@ int main()
         return -1;
     }
 
-    //--------------------------------------------------------------------------------------------/
     std::thread t(ShowFps, window);
     t.detach();
-    
-
+  
     // 在每次循环的开始前检查一次GLFW是否被要求退出，如果是的话该函数返回true，渲染循环结束
     while (!glfwWindowShouldClose(window))
     {
-        
-        // input
-        // -----
+   
         processInput(window);
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        // render
-        // ------
-
-       
         ras->ClearBuffer(glm::vec4(0.0f, 0.1f, 0.2f, 0.0f));
 
-        ras->DrawTriangle(V1, V2, V3);
-        
+        ras->setModelMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0, 1.0, 0.0)));
+
+        ras->DrawMesh(box);
         ras->Show();
+
         fps++;
+        angle += 1.0f;
 
         
 

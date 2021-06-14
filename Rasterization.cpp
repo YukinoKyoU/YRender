@@ -39,18 +39,34 @@ void Rasterization::Show() {
 	glDrawPixels(Width, Height, GL_RGBA, GL_UNSIGNED_BYTE, FrontBuffer->colorBuffer.data());
 }
 
-void Rasterization::DrawTriangle(const Vertex& v1, const Vertex& v2, const Vertex& v3) {
-	//将输入的顶点转化为V2F结构体
-	V2F o1 = shader->VertexShader(v1);
-	V2F o2 = shader->VertexShader(v2);
-	V2F o3 = shader->VertexShader(v3);
+void Rasterization::DrawMesh(const Mesh& mesh) {
+	if (mesh.EBO.empty()) {
+		return;
+	}
 
-	//视口变换
-	o1.windowPos = ViewPortMatrix * o1.windowPos;
-	o2.windowPos = ViewPortMatrix * o2.windowPos;
-	o3.windowPos = ViewPortMatrix * o3.windowPos;
+	for (int i = 0; i < mesh.EBO.size(); i += 3) {
+		Vertex p1, p2, p3;
+		p1 = mesh.VBO[mesh.EBO[i]];
+		p2 = mesh.VBO[mesh.EBO[i + 1]];
+		p3 = mesh.VBO[mesh.EBO[i + 2]];
 
-	ScanLineTriangle(o1, o2, o3);
+		//将输入的顶点转化为V2F结构体
+		V2F v1, v2, v3;
+		v1 = shader->VertexShader(p1);
+		v2 = shader->VertexShader(p2);
+		v3 = shader->VertexShader(p3);
+
+		//做透视除法，将坐标变换到NDC空间中
+		PerspectiveDivision(v1);
+		PerspectiveDivision(v2);
+		PerspectiveDivision(v3);
+
+		//视口变换
+		v1.windowPos = ViewPortMatrix * v1.windowPos;
+		v2.windowPos = ViewPortMatrix * v2.windowPos;
+		v3.windowPos = ViewPortMatrix * v3.windowPos;
+		ScanLineTriangle(v1, v2, v3);
+	}
 }
 
 
@@ -141,8 +157,22 @@ void Rasterization::ScanLine(const V2F& left, const V2F& right) {
 		v.windowPos.x = left.windowPos.x + i;
 		v.windowPos.y = left.windowPos.y;
 
-		FrontBuffer->WritePoint(v.windowPos.x, v.windowPos.y, shader->FragmentShader(v));
+		float depth = FrontBuffer->GetDepth(v.windowPos.x, v.windowPos.y);
+		if (v.windowPos.z < depth) 
+		{
+			FrontBuffer->WritePoint(v.windowPos.x, v.windowPos.y, shader->FragmentShader(v));
+			FrontBuffer->WriteDepth(v.windowPos.x, v.windowPos.y, v.windowPos.z);
+		}
 	}
+}
+
+void Rasterization::PerspectiveDivision(V2F& v) 
+{
+	v.windowPos /= v.windowPos.w;
+	v.windowPos.w = 1.0f;
+
+	//透视除法之后Z除了深度测试已经没用了,将深度值归一化[0,1]
+	v.windowPos.z = (v.windowPos.z + 1.0) * 0.5;
 }
 
 

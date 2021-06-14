@@ -6,6 +6,7 @@ FrameBuffer::FrameBuffer(const int& w, const int& h)
 	Width = w;
 	Height = h;
 	colorBuffer.resize(w* h * 4.0);
+	depthBuffer.resize(w * h, 1.0f);
 }
 
 void FrameBuffer::Resize(const int& w, const int& h)
@@ -13,6 +14,7 @@ void FrameBuffer::Resize(const int& w, const int& h)
 	Width = w;
 	Height = h;
 	colorBuffer.resize(w * h * 4, 0);
+	depthBuffer.resize(w * h, 1.0f);
 }
 
 void FrameBuffer::ClearColorBuffer(const glm::vec4& color)
@@ -25,6 +27,7 @@ void FrameBuffer::ClearColorBuffer(const glm::vec4& color)
 		*(p + i + 2) = color.b;
 		*(p + i + 3) = color.a;
 	}
+	depthBuffer.assign(Width * Height, 1.0f);
 }
 
 void FrameBuffer::WritePoint(const int& x, const int& y, const glm::vec4& color)
@@ -39,3 +42,20 @@ void FrameBuffer::WritePoint(const int& x, const int& y, const glm::vec4& color)
 	*(p + i * 4 + 2) = color.b ;
 	*(p + i * 4 + 3) = color.a ;
 }
+
+float FrameBuffer::GetDepth(const int& x, const int& y)
+{
+	if (x < 0 || x >= Width || y < 0 || y >= Height)
+		return 1.0f;
+
+	return *(depthBuffer.data() + y * Width + x);
+}
+
+void FrameBuffer::WriteDepth(const int& x, const int& y, const float& depth)
+{
+	if (x < 0 || x >= Width || y < 0 || y >= Height)
+		return;
+	float* p = depthBuffer.data();
+	*(p + y * Width + x) = depth;
+}
+
