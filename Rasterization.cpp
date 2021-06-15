@@ -73,15 +73,16 @@ void Rasterization::DrawMesh(const Mesh& mesh) {
 		v2 = shader->VertexShader(p2);
 		v3 = shader->VertexShader(p3);
 
+		if (!ViewCull(v1.worldPos / v1.Z, v2.worldPos / v2.Z, v3.worldPos / v3.Z)) {
+			continue;
+		}
+
 		//做透视除法，将坐标变换到NDC空间中
 		PerspectiveDivision(v1);
 		PerspectiveDivision(v2);
 		PerspectiveDivision(v3);
 
-		if (!FaceCulling(v1.windowPos, v2.windowPos, v3.windowPos)) {
-			continue;
-		}
-
+	
 		//视口变换
 		v1.windowPos = ViewPortMatrix * v1.windowPos;
 		v2.windowPos = ViewPortMatrix * v2.windowPos;
@@ -94,6 +95,10 @@ void Rasterization::DrawMesh(const Mesh& mesh) {
 			DrawLine(v3, v1);
 		}
 		else {
+
+			if (!FaceCulling(v1.windowPos, v2.windowPos, v3.windowPos)) {
+				continue;
+			}
 			ScanLineTriangle(v1, v2, v3);
 		}
 	}
