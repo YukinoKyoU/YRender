@@ -1,5 +1,6 @@
 
 #include "Rasterization.h"
+#include "Camera.h"
 #include <thread>
 #include <Windows.h>
 
@@ -21,8 +22,8 @@ void ShowFps(GLFWwindow* window) {
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
-
 Rasterization* ras;
+Camera* camera;
 int main()
 {
     //³õÊ¼»¯GLFW
@@ -43,6 +44,10 @@ int main()
         return -1;
     }
     
+    camera = new Camera(glm::vec3(0.0f, 0.0f, 5.0f),
+                        glm::vec3(0, 1, 0), 
+                        glm::vec3(0, 0, 1));
+
     glm::mat4 ViewPortMatrix = GetViewPortMatrix(0, 0, SCR_WIDTH, SCR_HEIGHT);
     
     ras = new Rasterization(SCR_WIDTH, SCR_HEIGHT);
@@ -53,8 +58,7 @@ int main()
     Texture tex("container.jpg");
     ras->SetTexture(&tex);
 
-    ras->setProjectMatrix(GetPerspectiveMatrix(glm::radians(60.0f), (float)SCR_WIDTH / SCR_HEIGHT, 0.3f, 100));
-    ras->setViewMatrix(GetViewMatrix(glm::vec3(0, 0, 5), glm::vec3(0, 0, -1), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0)));
+    
 
     float angle = 0.0f;
 
@@ -82,13 +86,17 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         ras->ClearBuffer(glm::vec4(0.0f, 0.0f, 0.0f, 0.0f));
 
+        ras->setViewMatrix(GetViewMatrix(camera->Position, camera->Front, camera->Right, camera->Up));
+        ras->setProjectMatrix(GetPerspectiveMatrix(camera->FOV, camera->Aspect, 0.3f, 100));
+        
         ras->setModelMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0, 1.0, 0.0)));
+        ras->UpdateViewPlanes();
 
         ras->DrawMesh(box);
         ras->Show();
 
         fps++;
-        angle += 1.0f;
+        //angle += 1.0f;
 
         
 
@@ -113,7 +121,7 @@ void processInput(GLFWwindow* window)
   
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
-    /*
+    
     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
         camera->RotatePitch(5.0f);
     }
@@ -144,7 +152,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
         camera->MoveUp(-0.1f);
     }
-    */
+    
     if (glfwGetKey(window, GLFW_KEY_P) == GLFW_PRESS) {
         ras->changeRenderMode();
     }

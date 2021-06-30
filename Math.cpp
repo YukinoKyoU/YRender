@@ -40,7 +40,7 @@ glm::mat4 GetPerspectiveMatrix(const float& fovy, const float& aspect, const flo
 {
 	glm::mat4 projection = glm::mat4(0.0f);
 	const float tanHalfFov = tan(fovy * 0.5f);
-	projection[0][0] = 1.0 / (aspect * tanHalfFov);
+	projection[0][0] = 1.0 / (aspect * tanHalfFov); 
 	projection[1][1] = 1.0f / (tanHalfFov);
 	projection[2][2] = -(f + n) / (f - n);
 	projection[2][3] = -1.0f;

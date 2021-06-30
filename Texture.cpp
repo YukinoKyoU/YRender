@@ -47,6 +47,7 @@ void Texture::LoadTexture(const std::string& Path)
 		free(data);
 	data = stbi_load(Path.c_str(), &width, &height, &channels, 0);
 }
+
 glm::vec4 Texture::Sample2D(const glm::vec2& texcoord) 
 {
 	//GL_REPEAT
