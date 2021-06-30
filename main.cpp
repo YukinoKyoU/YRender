@@ -90,6 +90,7 @@ int main()
         ras->setProjectMatrix(GetPerspectiveMatrix(camera->FOV, camera->Aspect, 0.3f, 100));
         
         ras->setModelMatrix(glm::rotate(glm::mat4(1.0f), glm::radians(angle), glm::vec3(1.0, 1.0, 0.0)));
+        ras->UpdateViewPlanes();
 
         ras->DrawMesh(box);
         ras->Show();

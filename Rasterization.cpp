@@ -3,7 +3,7 @@
 #include "FrameBuffer.cpp"
 
 Rasterization::Rasterization(const int& w, const int& h) :
-	Width(w), Height(h), FrontBuffer(nullptr), renderMode(Line)
+	Width(w), Height(h), FrontBuffer(nullptr), renderMode(Fill)
 {
 	ViewPlanes.resize(6, glm::vec4(0));
 }

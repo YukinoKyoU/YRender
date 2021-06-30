@@ -23,11 +23,11 @@ private:
 
 	glm::mat4 ViewPortMatrix;
 
-	std::vector<glm::vec4> ViewPlanes;
+	
 
 
 public:
-
+	std::vector<glm::vec4> ViewPlanes;
 	Rasterization(const int& w, const int& h);
 	~Rasterization();
 	//调整分辨率
